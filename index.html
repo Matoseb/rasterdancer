@@ -20,38 +20,169 @@
     }
 
     .container {
-    	--ratio: 1;
-    	--width: 50%;
+        --ratio: 1;
+        --width: 50%;
         width: var(--width);
         padding-bottom: calc(var(--width) * var(--ratio));
         background: black;
         position: relative;
+        color: white;
     }
 
     .container>* {
-    	position: absolute;
-    	width: 100%;
-    	height: 100%;
-    	object-fit: cover;
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+
     }
     </style>
 </head>
 
 <body>
     <section class="container">
+        <div>Click to init.</div>
     </section>
     <script type="text/javascript">
-    let url = "https://api.github.com/repos/Matoseb/rasterdancer/contents/videos/";
+    document.body.onclick = function() {
 
-    async function getFiles(url) {
+        let url = "https://api.github.com/repos/Matoseb/rasterdancer/contents/videos/";
+        let FILES = new Map();
+        let CURRANIMATION;
 
-        const response = await fetch(url);
-        const myJson = await response.json();
-        console.dir(myJson);
+        let contentTypes = {
+            "dir": async function(name, data) {
+                return await loadIframe(data.path);
+            },
+
+            "file": function(name, data) {
+                return this[data.name.split('.')[1]](name, data);
+            },
+
+            "mp4": async function(name, data) {
+                return await loadVideo(data.path);
+            },
+
+            "mov": async function(name, data) {
+                // await loadVideo(data);
+            }
+        }
+
+        function loadVideo(url) {
+            return new Promise((resolve) => {
+                let v = document.createElement('video');
+
+                v.src = url;
+                v.loop = true;
+                v.addEventListener('canplaythrough', function() {
+                    v.play();
+                    resolve(v);
+                });
+                // v.onerror
+                v.load();
+            });
+        }
+
+        function loadIframe(url) {
+            return new Promise((resolve) => {
+
+                    let f = document.createElement("iframe");
+
+                    f.onload = function() {
+                        document.body.removeChild(f);
+                        resolve(f);
+                    }
+
+                    document.body.appendChild(f);
+
+                    f.src = url;
+
+            });
+        }
+
+        let ITERATOR = FILES.entries();
+
+        async function getFiles(url) {
+            const response = await fetch(url);
+            const json = await response.json();
+            return json;
+        }
+
+        getFiles(url).then(files => {
+            files.forEach(addFile);
+            setPlayer();
+        });
+
+        function addFile(file) {
+            FILES.set(file.name.split('.')[0], file);
+        }
+
+        function setPlayer() {
+            let name = getHash();
+
+            if (name) {
+
+                if (!FILES.has(name)) {
+                    name = window.location.hash = CURRANIMATION;
+                }
+
+            } else {
+                name = nextAnimation();
+            }
+
+
+
+            if (CURRANIMATION !== name) {
+                CURRANIMATION = window.location.hash = name;
+                setAnimation(CURRANIMATION);
+            }
+        }
+
+        function nextAnimation() {
+
+            if (!FILES.size)
+                return undefined;
+
+            let res = ITERATOR.next();
+
+            if (res.done) {
+                ITERATOR = FILES.entries();
+                return nextAnimation();
+            }
+
+            return res.value[0];
+        }
+
+        async function setAnimation(name) {
+            let animation = FILES.get(name);
+            let dom = await contentTypes[animation.type](name, animation);
+            let cont = document.querySelector('.container');
+
+            emptyDom(cont);
+
+            cont.appendChild(dom);
+        }
+
+        function getHash() {
+            return window.location.hash.replace('#', '');
+        }
+
+        function emptyDom(dom) {
+            while (dom.firstChild) {
+                dom.removeChild(dom.firstChild);
+            }
+        }
+
+        window.addEventListener('hashchange', function() {
+            console.log('hashchanged');
+            if (window.location.hash !== '#' + CURRANIMATION)
+                setPlayer();
+
+        });
+
+
+        document.body.onclick = null;
     }
-
-    getFiles(url);
-
     </script>
 </body>
 
