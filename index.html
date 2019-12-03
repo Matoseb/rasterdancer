@@ -41,13 +41,13 @@
     <section class="container">
     </section>
     <script type="text/javascript">
-    let url = "https://api.github.com/repos/Matoseb/Scrollbars/contents/";
+    let url = "https://api.github.com/repos/Matoseb/rasterdancer/contents/videos/";
 
     async function getFiles(url) {
 
         const response = await fetch(url);
         const myJson = await response.json();
-        console.log(JSON.stringify(myJson));
+        console.dir(myJson);
     }
 
     getFiles(url);
