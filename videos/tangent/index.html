@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<body>
+	<canvas width='500' height='500' ></canvas>
+	<style>
+		* {margin:0;}
+	</style>
+	<script type="text/javascript">
+		const cv = document.getElementsByTagName('canvas')[0];
+		const c = cv.getContext('2d');
+
+		//circle
+		let c1 = {
+			x:0,	//x coordinate
+			y:0,	//y coordinate
+			r:25,	//radius
+		}
+
+		let c2 = {
+			x:cv.width * .5,
+			y:cv.height * .5,
+			r:50,
+		}
+
+		c.strokeStyle = 'black';
+		c.fillStyle = 'black';
+		c.lineWidth = 1;
+		//c.lineWidth = 10;
+		
+		// c.shadowColor = 'rgba(0,0,0,.1)';
+		// c.shadowBlur = 20;
+
+		window.addEventListener('mousemove', function(e) {
+			c1.x = e.clientX;
+			c1.y = e.clientY;
+		});
+
+		(function draw() {
+			c.clearRect(0, 0, cv.width, cv.height);
+
+			//direction of vector between cirlce 1 and cirlce 2
+			let a = Math.atan2(c2.y - c1.y, c2.x - c1.x);
+			//tangent angle
+			let b = Math.asin((c2.r - c1.r) / Math.hypot(c2.x - c1.x, c2.y - c1.y)) + Math.PI * .5;
+			c.beginPath();
+			if(Number.isNaN(b) || b == Math.PI) {	//if circle is inside other one
+				let c3 = c2.r > c1.r ? c2 : c1;
+				c.arc(c3.x, c3.y, c3.r, 0, 2 * Math.PI, false);
+			} else {		//draw semi circle then other semi circle then close path
+				c.arc(c2.x, c2.y, c2.r, a - b, a + b, false);			
+				c.arc(c1.x, c1.y, c1.r, a + b, a - b, false);
+				c.closePath();
+			}
+			c.stroke();
+			// c.fill();
+
+			//wheels
+			c.beginPath();
+			c.arc(c1.x, c1.y, c1.r-2, 0, 2 * Math.PI, false);
+			c.fill();
+			c.beginPath();
+			c.arc(c2.x, c2.y, c2.r-2, 0, 2 * Math.PI, false);
+			c.fill();
+
+			window.requestAnimationFrame(draw);
+		})();
+		
+	</script>
+</body>
+</html>
