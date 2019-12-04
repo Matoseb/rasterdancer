@@ -1,0 +1,12 @@
+[
+  {
+    "name": "android_marshmallow.mp4",
+    "path": "videos/android_marshmallow.mp4",
+    "type": "file"
+  },
+  {
+    "name": "tangent",
+    "path": "videos/tangent",
+    "type": "dir"
+  }
+]

@@ -13,6 +13,7 @@
     }
 
     body {
+        font-family: Helvetica, sans-serif;
         position: relative;
         display: flex;
         align-items: center;
@@ -21,32 +22,43 @@
 
     .container {
         --ratio: 1;
-        --width: 50%;
+        --width: 80vmin;
         width: var(--width);
         padding-bottom: calc(var(--width) * var(--ratio));
-        background: black;
         position: relative;
-        color: white;
     }
 
     .container>* {
+        border: none;
         position: absolute;
+        top: 0;
+        left: 0;
         width: 100%;
         height: 100%;
         object-fit: cover;
-
+        visibility: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     </style>
 </head>
 
 <body>
     <section class="container">
-        <div>Click to init.</div>
+        <div style="visibility: visible;"><b>CLICK TO INIT</b></div>
     </section>
     <script type="text/javascript">
     document.body.onclick = function() {
 
-        let url = "https://api.github.com/repos/Matoseb/rasterdancer/contents/videos/";
+        let URL = "https://api.github.com/repos/Matoseb/rasterdancer/contents/videos/";
+            // URL = "data.json";
+
+
+        let CYCLEDURATION = 30*1000; //millis
+
+        let cont = document.querySelector('.container');
+
         let FILES = new Map();
         let CURRANIMATION;
 
@@ -64,7 +76,7 @@
             },
 
             "mov": async function(name, data) {
-                // await loadVideo(data);
+                return await loadVideo(data.path);
             }
         }
 
@@ -78,6 +90,8 @@
                     v.play();
                     resolve(v);
                 });
+
+                cont.appendChild(v);
                 // v.onerror
                 v.load();
             });
@@ -86,16 +100,14 @@
         function loadIframe(url) {
             return new Promise((resolve) => {
 
-                    let f = document.createElement("iframe");
+                let f = document.createElement("iframe");
 
-                    f.onload = function() {
-                        document.body.removeChild(f);
-                        resolve(f);
-                    }
-
-                    document.body.appendChild(f);
-
-                    f.src = url;
+                f.onload = function() {
+                    resolve(f);
+                }
+                
+                f.src = url;
+                cont.appendChild(f);
 
             });
         }
@@ -107,11 +119,6 @@
             const json = await response.json();
             return json;
         }
-
-        getFiles(url).then(files => {
-            files.forEach(addFile);
-            setPlayer();
-        });
 
         function addFile(file) {
             FILES.set(file.name.split('.')[0], file);
@@ -129,8 +136,6 @@
             } else {
                 name = nextAnimation();
             }
-
-
 
             if (CURRANIMATION !== name) {
                 CURRANIMATION = window.location.hash = name;
@@ -156,11 +161,9 @@
         async function setAnimation(name) {
             let animation = FILES.get(name);
             let dom = await contentTypes[animation.type](name, animation);
-            let cont = document.querySelector('.container');
-
             emptyDom(cont);
 
-            cont.appendChild(dom);
+            dom.style.visibility = 'visible';
         }
 
         function getHash() {
@@ -168,7 +171,7 @@
         }
 
         function emptyDom(dom) {
-            while (dom.firstChild) {
+            while (dom.childElementCount > 1) {
                 dom.removeChild(dom.firstChild);
             }
         }
@@ -180,7 +183,42 @@
 
         });
 
+        async function init() {
 
+            let files = await getFiles(URL);
+
+            files = remapData(files);
+
+            console.log(files);
+
+            files.forEach(addFile);
+            setPlayer();
+
+
+            setInterval(update, CYCLEDURATION);
+        }
+
+        function update() {
+            window.location.hash = '';
+        }
+
+        function remapData(rawData) {
+            let data = [];
+
+            rawData.forEach(file => {
+                let o = {};
+                
+                ['name', 'path', 'type'].forEach(key => {
+                    o[key] = file[key];
+                });
+
+                data.push(o);
+            });
+
+            return data;
+        }
+
+        init();
         document.body.onclick = null;
     }
     </script>
